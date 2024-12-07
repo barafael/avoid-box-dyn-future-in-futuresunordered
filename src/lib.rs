@@ -25,7 +25,7 @@ pub fn launch_threads_boxdyn(bag: &mut Bag) {
     for i in 0..100 {
         let handle = tokio::task::spawn_blocking(move || {
             println!("Thread {i} is running");
-            std::thread::sleep(std::time::Duration::from_secs(1));
+            std::thread::sleep(std::time::Duration::from_millis(50));
             i
         });
         let operation_type = OperationType::Scan;
@@ -112,7 +112,7 @@ pub fn launch_threads_noboxdyn(bag: &mut FuturesUnordered<Operation>) {
     for i in 0..100 {
         let join_handle = tokio::task::spawn_blocking(move || {
             println!("Thread {i} is running");
-            std::thread::sleep(std::time::Duration::from_secs(1));
+            std::thread::sleep(std::time::Duration::from_millis(50));
             i
         });
         let operation = Operation {
@@ -135,9 +135,12 @@ mod test {
         let mut bag = FuturesUnordered::new();
 
         launch_threads_boxdyn(&mut bag);
+        let mut highest = -1;
         while let Some((sensor_id, event)) = bag.next().await {
             println!("{:?}", (sensor_id, event));
+            highest = highest.max(sensor_id);
         }
+        assert_eq!(highest, 99);
     }
 
     #[tokio::test]
@@ -145,8 +148,11 @@ mod test {
         let mut bag = FuturesUnordered::new();
 
         launch_threads_noboxdyn(&mut bag);
+        let mut highest = -1;
         while let Some((sensor_id, event)) = bag.next().await {
             println!("{:?}", (sensor_id, event));
+            highest = highest.max(sensor_id);
         }
+        assert_eq!(highest, 99);
     }
 }
